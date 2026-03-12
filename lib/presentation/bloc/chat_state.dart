@@ -2,50 +2,60 @@ import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/message.dart';
 
-sealed class ChatState extends Equatable {
+abstract class ChatState extends Equatable {
   const ChatState();
 }
 
-// Nothing loaded yet — shows the empty/welcome screen
-class ChatInitial extends ChatState {
-  const ChatInitial();
+class Initial extends ChatState {
+  const Initial();
 
   @override
   List<Object> get props => [];
 }
 
-// Normal state — carries the full message list.
-// isStreaming = true while Gemini is still sending chunks.
-// The UI uses this flag to show/hide the send button and typing indicator.
-class ChatLoaded extends ChatState {
+
+class Loading extends ChatState {
   final List<Message> messages;
-  final bool isStreaming;
 
-  const ChatLoaded({
-    required this.messages,
-    this.isStreaming = false,
-  });
-
-  // Convenience so the BLoC doesn't have to reconstruct the whole object
-  ChatLoaded copyWith({List<Message>? messages, bool? isStreaming}) {
-    return ChatLoaded(
-      messages: messages ?? this.messages,
-      isStreaming: isStreaming ?? this.isStreaming,
-    );
-  }
+  const Loading({required this.messages});
 
   @override
-  List<Object> get props => [messages, isStreaming];
+  List<Object> get props => [messages];
 }
 
-// Something went wrong — still shows the previous messages so the user
-// doesn't lose the conversation context
+
+class ChatStreaming extends ChatState {
+  final List<Message> messages;
+  final String streamingContent;
+
+  const ChatStreaming({required this.messages, required this.streamingContent});
+
+  @override
+  List<Object> get props => [messages, streamingContent];
+}
+
+
+class ChatCompleted extends ChatState {
+  final List<Message> messages;
+
+  const ChatCompleted({required this.messages});
+
+  @override
+  List<Object> get props => [messages];
+}
+
 class ChatError extends ChatState {
   final String message;
   final List<Message> previousMessages;
+  // keeping the original text so the UI can offer a retry button
+  final String failedText;
 
-  const ChatError({required this.message, required this.previousMessages});
+  const ChatError({
+    required this.message,
+    required this.previousMessages,
+    required this.failedText,
+  });
 
   @override
-  List<Object> get props => [message, previousMessages];
+  List<Object> get props => [message, previousMessages, failedText];
 }

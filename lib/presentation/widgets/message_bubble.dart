@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../domain/entities/message.dart';
 
@@ -36,7 +37,7 @@ class MessageBubble extends StatelessWidget {
                   bottomRight: Radius.circular(isUser ? 4 : 18),
                 ),
               ),
-              child: _buildContent(colors, isUser),
+              child: _buildContent(context, colors, isUser),
             ),
           ),
 
@@ -46,7 +47,7 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(ColorScheme colors, bool isUser) {
+  Widget _buildContent(BuildContext context, ColorScheme colors, bool isUser) {
     // Waiting for first chunk — show bouncing dots
     if (message.isStreaming && message.content.isEmpty) {
       return const _BouncingDots();
@@ -60,19 +61,36 @@ class MessageBubble extends StatelessWidget {
       );
     }
 
-    // Fully received — plain text (markdown in Phase 7)
-    return Text(
-      message.content,
-      style: TextStyle(
-        color: isUser ? colors.onPrimary : colors.onSurface,
-        fontSize: 15,
-        height: 1.4,
+
+    if (isUser) {
+      return Text(
+        message.content,
+        style: TextStyle(color: colors.onPrimary, fontSize: 15, height: 1.4),
+      );
+    }
+
+    // AI messages rendered 
+    return MarkdownBody(
+      data: message.content,
+      shrinkWrap: true,
+      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+        p: TextStyle(color: colors.onSurface, fontSize: 15, height: 1.4),
+        code: TextStyle(
+          backgroundColor: colors.surfaceContainerHighest,
+          color: colors.primary,
+          fontSize: 13,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.outlineVariant),
+        ),
       ),
     );
   }
 }
 
-// --- Bouncing dots (shown while waiting for first chunk) ---
+// --- Bouncing dots 
 
 class _BouncingDots extends StatefulWidget {
   const _BouncingDots();
@@ -96,9 +114,9 @@ class _BouncingDotsState extends State<_BouncingDots>
       duration: const Duration(milliseconds: 1000),
     )..repeat();
 
-    // Stagger: dot 0 leads, dot 2 trails by ~200ms each
+
     _dotAnims = List.generate(3, (i) {
-      final start = i * 0.2; // 0.0, 0.2, 0.4
+      final start = i * 0.2; 
       final end = start + 0.4; // 0.4, 0.6, 0.8
       return Tween<double>(begin: 0, end: -7).animate(
         CurvedAnimation(
@@ -169,7 +187,7 @@ class _StreamingTextState extends State<_StreamingText>
     _cursorController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
-    )..repeat(reverse: true); // fades in and out
+    )..repeat(reverse: true); 
 
     _cursorOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _cursorController, curve: Curves.easeInOut),

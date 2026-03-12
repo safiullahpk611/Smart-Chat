@@ -3,27 +3,27 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../core/constant/app_constant.dart';
 
-
 import '../../domain/entities/message.dart';
 
 class AiRemoteDatasource {
   final Dio _dio;
 
   AiRemoteDatasource(String apiKey)
-      : _dio = Dio(
-          BaseOptions(
-            // groqBaseUrl is /v1 — append the endpoint path in the post() call
-            baseUrl: AppConstants.groqBaseUrl,
-            headers: {
-              'Authorization': 'Bearer $apiKey',
-              'Content-Type': 'application/json',
-            },
-            // ResponseType.stream so we can read SSE chunks as they arrive
-            responseType: ResponseType.stream,
-          ),
-        );
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: AppConstants.groqBaseUrl,
+          headers: {
+            'Authorization': 'Bearer $apiKey',
+            'Content-Type': 'application/json',
+          },
+          responseType: ResponseType.stream,
+          connectTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+          // receive timeout is longer because streaming takes time
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
 
-  // Converts our domain messages to the OpenAI messages format Groq expects
   List<Map<String, String>> _toGroqMessages(
     List<Message> history,
     String userMessage,
@@ -31,10 +31,9 @@ class AiRemoteDatasource {
     final groqMessages = <Map<String, String>>[
       {'role': 'system', 'content': AppConstants.systemPrompt},
       // previous conversation turns
-      ...history.map((m) => {
-            'role': m.isUser ? 'user' : 'assistant',
-            'content': m.content,
-          }),
+      ...history.map(
+        (m) => {'role': m.isUser ? 'user' : 'assistant', 'content': m.content},
+      ),
       // the new user message
       {'role': 'user', 'content': userMessage},
     ];
@@ -45,6 +44,8 @@ class AiRemoteDatasource {
     List<Message> history,
     String userMessage,
   ) async* {
+    print('calling groq api with model: ${AppConstants.groqModel}');
+    print('history count befor sending: ${history.length}');
     try {
       final response = await _dio.post<ResponseBody>(
         '/chat/completions',
@@ -56,9 +57,9 @@ class AiRemoteDatasource {
         options: Options(responseType: ResponseType.stream),
       );
 
+      print('got response, status: ${response.statusCode}');
       final stream = response.data!.stream;
 
-      // Buffer because a single TCP chunk can contain multiple SSE lines
       final buffer = StringBuffer();
 
       await for (final bytes in stream) {
@@ -81,14 +82,32 @@ class AiRemoteDatasource {
             if (content != null && content.isNotEmpty) {
               yield content;
             }
-          } catch (_) {
-            // malformed chunk — skip and keep going
-          }
+          } catch (_) {}
         }
       }
     } on DioException catch (e) {
-      final msg = e.response?.statusMessage ?? e.message ?? 'Unknown error';
-      throw Exception('Groq error: $msg');
+      final msg = _friendlyError(e);
+      print('dio error occured: $msg'); // check network or api key if this shows
+      throw Exception(msg);
+    }
+  }
+
+  // maps dio error types to messages a normal user can understand
+  String _friendlyError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionError:
+        return 'No internet connection. Please check your network and try again.';
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+        return 'Connection timed out. Your internet might be slow, please retry.';
+      case DioExceptionType.receiveTimeout:
+        return 'Server is taking too long to respond. Try again in a moment.';
+      default:
+        // for things like 401, 429 etc — show status message if available
+        final status = e.response?.statusCode;
+        if (status == 401) return 'Invalid API key. Check your Groq key.';
+        if (status == 429) return 'Too many requests. Please wait a moment and retry.';
+        return e.response?.statusMessage ?? e.message ?? 'Something went wrong.';
     }
   }
 }

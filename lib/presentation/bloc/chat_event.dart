@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
 
-sealed class ChatEvent extends Equatable {
+abstract class ChatEvent extends Equatable {
   const ChatEvent();
 }
 
-// User hit send
+// User hits send
 class SendMessageEvent extends ChatEvent {
   final String text;
   const SendMessageEvent(this.text);
@@ -13,7 +13,16 @@ class SendMessageEvent extends ChatEvent {
   List<Object> get props => [text];
 }
 
-// Fired on app launch to restore Hive messages (Phase 7)
+
+class ReceiveStreamChunkEvent extends ChatEvent {
+  final String chunk;
+  const ReceiveStreamChunkEvent(this.chunk);
+
+  @override
+  List<Object> get props => [chunk];
+}
+
+// Fired on app launch to restore Hive messages
 class LoadHistoryEvent extends ChatEvent {
   const LoadHistoryEvent();
 
@@ -21,9 +30,17 @@ class LoadHistoryEvent extends ChatEvent {
   List<Object> get props => [];
 }
 
-// Clear button in the app bar (Phase 7)
+// Clear button in the app bar
 class ClearHistoryEvent extends ChatEvent {
   const ClearHistoryEvent();
+
+  @override
+  List<Object> get props => [];
+}
+
+// Retry the last failed message
+class RetryEvent extends ChatEvent {
+  const RetryEvent();
 
   @override
   List<Object> get props => [];

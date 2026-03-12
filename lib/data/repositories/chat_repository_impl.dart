@@ -14,7 +14,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Stream<String> sendMessage(List<Message> history, String userMessage) {
-   
+    print('repo: forwarding to datasource, msg="${userMessage.substring(0, userMessage.length.clamp(0, 30))}..."');
     return _datasource.streamResponse(history, userMessage);
   }
 
@@ -33,14 +33,16 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> saveMessage(Message message) async {
     final box = await _openBox();
     final model = MessageModel.fromEntity(message);
-    
     await box.put(model.id, model.toMap());
+    print('saved msg to hive, role: ${message.role.name}, id: ${message.id}');
   }
 
   @override
   Future<void> clearHistory() async {
+    print('clearing all chat histroy from hive...');
     final box = await _openBox();
     await box.clear();
+    print('hive box cleard ok');
   }
 
   // Lazy-open

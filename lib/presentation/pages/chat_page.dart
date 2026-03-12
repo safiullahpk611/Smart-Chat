@@ -6,6 +6,7 @@ import '../../domain/entities/message.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
+import '../bloc/theme_cubit.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/message_bubble.dart';
 
@@ -26,7 +27,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _scrollToBottom() {
-    // Small delay so the new bubble is laid out before we scroll
+    // Small delay
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -48,7 +49,18 @@ class _ChatPageState extends State<ChatPage> {
       appBar: AppBar(
         title: const Text(AppConstants.appName),
         actions: [
-          // Clear button — wired to Hive clear in Phase 7
+          // Dark mode toggle
+          BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, themeMode) => IconButton(
+              icon: Icon(
+                themeMode == ThemeMode.dark
+                    ? Icons.light_mode_outlined
+                    : Icons.dark_mode_outlined,
+              ),
+              tooltip: 'Toggle theme',
+              onPressed: () => context.read<ThemeCubit>().toggle(),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Clear chat',
@@ -62,17 +74,27 @@ class _ChatPageState extends State<ChatPage> {
             child: BlocConsumer<ChatBloc, ChatState>(
               // Scroll down whenever a new message or chunk arrives
               listener: (context, state) {
-                if (state is ChatLoaded) _scrollToBottom();
-                if (state is ChatError) _showErrorSnack(context, state.message);
+                if (state is Loading ||
+                    state is ChatStreaming ||
+                    state is ChatCompleted) {
+                  _scrollToBottom();
+                }
+                if (state is ChatError) {
+                  _showErrorSnack(context, state.message);
+                }
               },
               builder: (context, state) {
                 final messages = switch (state) {
-                  ChatLoaded s => s.messages,
+                  Loading s => s.messages,
+                  ChatStreaming s => s.messages,
+                  ChatCompleted s => s.messages,
                   ChatError s => s.previousMessages,
                   _ => <Message>[],
                 };
 
-                if (messages.isEmpty) return const _EmptyChat();
+                if (messages.isEmpty) {
+                  return const _EmptyChat();
+                }
 
                 return ListView.builder(
                   controller: _scrollController,
@@ -89,13 +111,12 @@ class _ChatPageState extends State<ChatPage> {
           BlocBuilder<ChatBloc, ChatState>(
             buildWhen: (prev, curr) {
               // only rebuild input when streaming status changes
-              if (prev is ChatLoaded && curr is ChatLoaded) {
-                return prev.isStreaming != curr.isStreaming;
-              }
-              return true;
+              final wasStreaming = prev is Loading || prev is ChatStreaming;
+              final nowStreaming = curr is Loading || curr is ChatStreaming;
+              return wasStreaming != nowStreaming;
             },
             builder: (context, state) {
-              final isStreaming = state is ChatLoaded && state.isStreaming;
+              final isStreaming = state is Loading || state is ChatStreaming;
               return ChatInput(
                 enabled: !isStreaming,
                 onSend: (text) => _onSend(context, text),
@@ -131,18 +152,25 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _showErrorSnack(BuildContext context, String message) {
-    print("---------------- the error is ${message}");
+    print("---------------- the error is $message");
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: 'Retry',
+          textColor: Colors.white,
+          onPressed: () => context.read<ChatBloc>().add(const RetryEvent()),
+        ),
       ),
     );
   }
 }
 
-// Shown when there are no messages yet
+//  there are no messages yet
 class _EmptyChat extends StatelessWidget {
   const _EmptyChat();
 
