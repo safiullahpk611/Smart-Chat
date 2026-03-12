@@ -1,6 +1,6 @@
 name: smart_chat
 description: "AI chat app "
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -15,17 +15,16 @@ dependencies:
   flutter_bloc: ^9.1.1
   equatable: ^2.0.7
 
-  # Gemini AI
-  google_generative_ai: ^0.4.6
+  # Groq API (OpenAI-compatible REST + SSE streaming)
+  dio: ^5.9.2
 
-  # Local storage 
+  # Local storage
   hive: ^2.2.3
   hive_flutter: ^1.1.0
 
-  # Markdown rendering 
+  # Markdown rendering
   flutter_markdown: ^0.7.4
 
- 
   uuid: ^4.5.1
 
   cupertino_icons: ^1.0.8
@@ -34,7 +33,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-
 
   hive_generator: ^2.0.1
   build_runner: ^2.4.13

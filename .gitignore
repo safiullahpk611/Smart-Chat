@@ -1,3 +1,9 @@
+# Secrets — never commit these
+.env
+*.env
+launch.json.local
+lib/core/constants/app_constants.dart
+
 # Miscellaneous
 *.class
 *.log

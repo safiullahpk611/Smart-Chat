@@ -2,13 +2,13 @@ import 'package:hive/hive.dart';
 
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/chat_repository.dart';
-import '../datasources/gemini_remote_datasource.dart';
+import '../datasources/ai_remote_datasource.dart';
 import '../models/message_model.dart';
 
 const _hiveBoxName = 'chat_history';
 
 class ChatRepositoryImpl implements ChatRepository {
-  final GeminiRemoteDatasource _datasource;
+  final AiRemoteDatasource _datasource;
 
   ChatRepositoryImpl(this._datasource);
 
