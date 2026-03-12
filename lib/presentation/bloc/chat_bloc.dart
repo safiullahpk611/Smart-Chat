@@ -35,11 +35,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
 
-  List<Message> get _currentMessages => switch (state) {
-    ChatCompleted s => s.messages,
-    ChatError s => s.previousMessages,
-    _ => [],
-  };
+  List<Message> get _currentMessages {
+    if (state is ChatCompleted) return (state as ChatCompleted).messages;
+    if (state is ChatError) return (state as ChatError).previousMessages;
+    return [];
+  }
 
   Future<void> _onSendMessage(
     SendMessageEvent event,
@@ -60,14 +60,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     );
     final withUser = [...history, userMsg];
 
-    // Placeholder AI bubble — empty content triggers the bouncing dot animation
-    final aiMsgId = _uuid.v4();
-    final aiTimestamp = DateTime.now();
+    // placeholder AI bubble so user sees a loading dot right away
     final aiPlaceholder = Message(
-      id: aiMsgId,
+      id: _uuid.v4(),
       content: '',
       role: MessageRole.aiModel,
-      timestamp: aiTimestamp,
+      timestamp: DateTime.now(),
       isStreaming: true,
     );
 
@@ -79,31 +77,19 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     try {
 
-      await emit.forEach<String>(
-        _sendMessage(history, text),
-        onData: (chunk) {
-          accumulated += chunk;
-       
-          print('chunk recieved >> $chunk');
+      await for (final chunk in _sendMessage(history, text)) {
+        accumulated += chunk;
+        print('chunk recieved >> $chunk');
 
-   
-          add(ReceiveStreamChunkEvent(chunk));
-
-          final streamingAi = aiPlaceholder.copyWith(
-            content: accumulated,
-            isStreaming: true,
-          );
-          return ChatStreaming(
-            messages: [...withUser, streamingAi],
-            streamingContent: accumulated,
-          );
-        },
-        onError: (error, _) => ChatError(
-          message: error.toString().replaceFirst('Exception: ', ''),
-          previousMessages: withUser,
-          failedText: text,
-        ),
-      );
+        final streamingAi = aiPlaceholder.copyWith(
+          content: accumulated,
+          isStreaming: true,
+        );
+        emit(ChatStreaming(
+          messages: [...withUser, streamingAi],
+          streamingContent: accumulated,
+        ));
+      }
 
       // Stream complete — seal the AI message and persist both turns to Hive
       final finalAiMsg = aiPlaceholder.copyWith(

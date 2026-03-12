@@ -60,39 +60,35 @@ class AiRemoteDatasource {
       print('got response, status: ${response.statusCode}');
       final stream = response.data!.stream;
 
-      final buffer = StringBuffer();
-
       await for (final bytes in stream) {
-        buffer.write(utf8.decode(bytes));
-        final raw = buffer.toString();
-        buffer.clear();
+        final text = utf8.decode(bytes);
 
-        // Each SSE event is separated by \n\n; split and process lines
-        for (final line in raw.split('\n')) {
+        for (final line in text.split('\n')) {
           final trimmed = line.trim();
           if (!trimmed.startsWith('data: ')) continue;
 
-          final payload = trimmed.substring(6); // strip 'data: '
+          final payload = trimmed.substring(6); // remove the 'data: ' prefix
           if (payload == '[DONE]') return;
 
           try {
             final json = jsonDecode(payload) as Map<String, dynamic>;
-            final content =
-                json['choices']?[0]?['delta']?['content'] as String?;
+            final content = json['choices']?[0]?['delta']?['content'] as String?;
             if (content != null && content.isNotEmpty) {
               yield content;
             }
-          } catch (_) {}
+          } catch (_) {
+            // skip malformed lines
+          }
         }
       }
     } on DioException catch (e) {
       final msg = _friendlyError(e);
-      print('dio error occured: $msg'); // check network or api key if this shows
+      print('dio error occured: $msg'); 
       throw Exception(msg);
     }
   }
 
-  // maps dio error types to messages a normal user can understand
+  //  error types to messages a normal user can understand
   String _friendlyError(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionError:

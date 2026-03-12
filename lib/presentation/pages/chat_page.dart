@@ -84,13 +84,16 @@ class _ChatPageState extends State<ChatPage> {
                 }
               },
               builder: (context, state) {
-                final messages = switch (state) {
-                  Loading s => s.messages,
-                  ChatStreaming s => s.messages,
-                  ChatCompleted s => s.messages,
-                  ChatError s => s.previousMessages,
-                  _ => <Message>[],
-                };
+                List<Message> messages = [];
+                if (state is Loading) {
+                  messages = state.messages;
+                } else if (state is ChatStreaming) {
+                  messages = state.messages;
+                } else if (state is ChatCompleted) {
+                  messages = state.messages;
+                } else if (state is ChatError) {
+                  messages = state.previousMessages;
+                }
 
                 if (messages.isEmpty) {
                   return const _EmptyChat();
@@ -109,12 +112,6 @@ class _ChatPageState extends State<ChatPage> {
 
           // Input bar — disabled while streaming so user can't double-send
           BlocBuilder<ChatBloc, ChatState>(
-            buildWhen: (prev, curr) {
-              // only rebuild input when streaming status changes
-              final wasStreaming = prev is Loading || prev is ChatStreaming;
-              final nowStreaming = curr is Loading || curr is ChatStreaming;
-              return wasStreaming != nowStreaming;
-            },
             builder: (context, state) {
               final isStreaming = state is Loading || state is ChatStreaming;
               return ChatInput(

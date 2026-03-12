@@ -100,36 +100,43 @@ class _BouncingDots extends StatefulWidget {
 }
 
 class _BouncingDotsState extends State<_BouncingDots>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  // Each dot gets a staggered interval so they bounce in a wave
-  late final List<Animation<double>> _dotAnims;
+    with TickerProviderStateMixin {
+  late final List<AnimationController> _controllers;
+  late final List<Animation<double>> _anims;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat();
 
+    _controllers = List.generate(
+      3,
+      (_) => AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 600),
+      ),
+    );
 
-    _dotAnims = List.generate(3, (i) {
-      final start = i * 0.2; 
-      final end = start + 0.4; // 0.4, 0.6, 0.8
-      return Tween<double>(begin: 0, end: -7).animate(
-        CurvedAnimation(
-          parent: _controller,
-          curve: Interval(start, end, curve: Curves.easeInOut),
-        ),
-      );
-    });
+    _anims = _controllers
+        .map(
+          (c) => Tween<double>(begin: 0, end: -7).animate(
+            CurvedAnimation(parent: c, curve: Curves.easeInOut),
+          ),
+        )
+        .toList();
+
+    // start each dot a bit later so they wave instead of bouncing together
+    for (int i = 0; i < 3; i++) {
+      Future.delayed(Duration(milliseconds: i * 150), () {
+        if (mounted) _controllers[i].repeat(reverse: true);
+      });
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -137,29 +144,24 @@ class _BouncingDotsState extends State<_BouncingDots>
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5);
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(3, (i) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Transform.translate(
-                offset: Offset(0, _dotAnims[i].value),
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (i) {
+        return AnimatedBuilder(
+          animation: _anims[i],
+          builder: (_, __) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Transform.translate(
+              offset: Offset(0, _anims[i].value),
+              child: Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
-            );
-          }),
+            ),
+          ),
         );
-      },
+      }),
     );
   }
 }
