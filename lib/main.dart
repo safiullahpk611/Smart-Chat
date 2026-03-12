@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import 'core/constants/app_constants.dart';
+import 'core/constant/app_constant.dart';
 import 'core/theme/app_theme.dart';
 import 'data/datasources/ai_remote_datasource.dart';
 import 'data/repositories/chat_repository_impl.dart';

@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import '../../core/constant/app_constant.dart';
 
-import '../../core/constants/app_constants.dart';
+
 import '../../domain/entities/message.dart';
 
 class AiRemoteDatasource {
@@ -11,6 +12,7 @@ class AiRemoteDatasource {
   AiRemoteDatasource(String apiKey)
       : _dio = Dio(
           BaseOptions(
+            // groqBaseUrl is /v1 — append the endpoint path in the post() call
             baseUrl: AppConstants.groqBaseUrl,
             headers: {
               'Authorization': 'Bearer $apiKey',
@@ -27,12 +29,7 @@ class AiRemoteDatasource {
     String userMessage,
   ) {
     final groqMessages = <Map<String, String>>[
-      {
-        'role': 'system',
-        'content':
-            'You are SmartChat, a helpful and concise AI assistant. '
-            'Format your answers with Markdown when it helps clarity.',
-      },
+      {'role': 'system', 'content': AppConstants.systemPrompt},
       // previous conversation turns
       ...history.map((m) => {
             'role': m.isUser ? 'user' : 'assistant',
@@ -50,10 +47,9 @@ class AiRemoteDatasource {
   ) async* {
     try {
       final response = await _dio.post<ResponseBody>(
-        // baseUrl already set, so empty string hits it directly
-        '',
+        '/chat/completions',
         data: {
-          'model': AppConstants.aiModel,
+          'model': AppConstants.groqModel,
           'messages': _toGroqMessages(history, userMessage),
           'stream': true,
         },

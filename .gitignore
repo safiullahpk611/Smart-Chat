@@ -2,7 +2,7 @@
 .env
 *.env
 .vscode/launch.json
-lib/core/constants/app_constants.dart
+lib/core/constant/app_constant.dart
 
 # Miscellaneous
 *.class
