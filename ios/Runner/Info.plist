@@ -45,5 +45,18 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- App uses standard HTTPS only (Groq API), no custom encryption -->
+	<!-- Set to false to skip export compliance questions on App Store -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- ATS config — we only call https://api.groq.com so default is fine -->
+	<!-- Explicitly keeping NSAllowsArbitraryLoads false (it's the default) -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
 </dict>
 </plist>

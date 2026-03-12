@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- used to check if network is available before making requests -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
     <application
         android:label="smart_chat"
         android:name="${applicationName}"
