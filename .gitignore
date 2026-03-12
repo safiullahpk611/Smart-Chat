@@ -1,7 +1,7 @@
 # Secrets — never commit these
 .env
 *.env
-launch.json.local
+.vscode/launch.json
 lib/core/constants/app_constants.dart
 
 # Miscellaneous
