@@ -139,7 +139,10 @@ flutter pub get
 }
 ```
 
-5. Run the app:
+5. Run the app:![WhatsApp Image 2026-03-13 at 5 20 47 AM](https://github.com/user-attachments/assets/d29ae262-c0f6-417e-8944-890bd9d9e1c8)
+![WhatsApp Image 2026-03-13 at 5 20 47 AM (1)](https://github.com/user-attachments/assets/dcd11948-5f13-41b3-adef-b38a782b7da8)
+![WhatsApp Image 2026-03-13 at 5 20 48 AM](https://github.com/user-attachments/assets/d80fa368-3e06-4b4a-91b7-ead3c3aee168)
+
 ```bash
 flutter run --dart-define=GROQ_API_KEY=your_key_here
 ```
