@@ -23,10 +23,12 @@ class ChatRepositoryImpl implements ChatRepository {
   @override
   Future<List<Message>> loadChatHistory() async {
     final box = await _openBox();
-    // Hive stores in insertion order, 
-    return box.values
+    final messages = box.values
         .map((raw) => MessageModel.fromMap(raw as Map))
         .toList();
+    // sort oldest first so chat shows in correct order
+    messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return messages;
   }
 
   @override

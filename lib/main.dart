@@ -13,7 +13,7 @@ import 'domain/usecases/send_message.dart';
 import 'presentation/bloc/chat_bloc.dart';
 import 'presentation/bloc/chat_event.dart';
 import 'presentation/bloc/theme_cubit.dart';
-import 'presentation/pages/chat_page.dart';
+import 'presentation/pages/splash_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +50,7 @@ class SmartChatApp extends StatelessWidget {
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeMode,
-          home: const ChatPage(),
+          home: const SplashPage(),
         ),
       ),
     );

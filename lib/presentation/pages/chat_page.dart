@@ -21,13 +21,19 @@ class _ChatPageState extends State<ChatPage> {
   final _scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    // scroll to bottom after history loads on app open
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
   void _scrollToBottom() {
-    // Small delay
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
