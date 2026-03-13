@@ -18,12 +18,14 @@ import 'presentation/pages/splash_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
+  final settingsBox = await Hive.openBox('settings');
 
-  runApp(const SmartChatApp());
+  runApp(SmartChatApp(settingsBox: settingsBox));
 }
 
 class SmartChatApp extends StatelessWidget {
-  const SmartChatApp({super.key});
+  final dynamic settingsBox;
+  const SmartChatApp({super.key, required this.settingsBox});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +34,7 @@ class SmartChatApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => ThemeCubit()),
+        BlocProvider(create: (_) => ThemeCubit(settingsBox)),
         BlocProvider(
           create: (_) => ChatBloc(
             sendMessage: SendMessage(repo),

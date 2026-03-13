@@ -14,7 +14,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Stream<String> sendMessage(List<Message> history, String userMessage) {
-    print('repo: forwarding to datasource, msg="${userMessage.substring(0, userMessage.length.clamp(0, 30))}..."');
+    print('forwarding to datasource, msg="${userMessage.substring(0, userMessage.length.clamp(0, 30))}..."');
     return _datasource.streamResponse(history, userMessage);
   }
 
@@ -26,7 +26,7 @@ class ChatRepositoryImpl implements ChatRepository {
     final messages = box.values
         .map((raw) => MessageModel.fromMap(raw as Map))
         .toList();
-    // sort oldest first so chat shows in correct order
+    
     messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
     return messages;
   }
@@ -44,7 +44,7 @@ class ChatRepositoryImpl implements ChatRepository {
     print('clearing all chat histroy from hive...');
     final box = await _openBox();
     await box.clear();
-    print('hive box cleard ok');
+    print('hive box cleard ');
   }
 
   // Lazy-open
