@@ -8,6 +8,7 @@ import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
 import '../bloc/theme_cubit.dart';
 import '../widgets/chat_input.dart';
+import '../widgets/chat_shimmer.dart';
 import '../widgets/message_bubble.dart';
 
 class ChatPage extends StatefulWidget {
@@ -90,6 +91,11 @@ class _ChatPageState extends State<ChatPage> {
                 }
               },
               builder: (context, state) {
+                // still loading from hive — show shimmer
+                if (state is Initial) {
+                  return const ChatShimmer();
+                }
+
                 List<Message> messages = [];
                 if (state is Loading) {
                   messages = state.messages;
