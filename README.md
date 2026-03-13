@@ -1,104 +1,101 @@
-SmartChat
+# SmartChat
 
-SmartChat is a small Flutter AI chat app I built for a technical assignment.
-It lets you chat with an AI and the response comes streaming word by word, similar to how ChatGPT shows messages.
+SmartChat is a Flutter AI chat app built for a technical assignment.
+It lets you chat with an AI and the response streams word by word, 
+similar to how ChatGPT shows messages.
 
-The app uses the Groq API with the llama model, and the project is structured using Clean Architecture with BLoC.
+The app uses the Groq API with the llama model, structured using 
+Clean Architecture with BLoC.
 
-What the app does
+---
 
-You can chat with an AI assistant
+## What the app does
 
-AI response streams word by word instead of coming all at once
+- Chat with an AI assistant
+- AI response streams word by word instead of coming all at once
+- Shows animated dots while waiting for response
+- Shows a blinking cursor while text is still streaming
+- Supports Markdown — code blocks and bold text render properly
+- Dark / Light mode toggle
+- Chat history saved locally with Hive — messages stay after restart
+- Splash screen on app launch with fade animation
+- Long press any message to copy it to clipboard
 
-Shows animated dots while waiting for response
+---
 
-Shows a blinking cursor while text is still coming
+## Tech used
 
-Supports Markdown, so code blocks and bold text render properly
+- Flutter + Dart
+- flutter_bloc for state managment
+- Dio for API calls and SSE streaming
+- Groq API — llama-3.1-8b-instant model
+- Hive for local storage
+- flutter_markdown for rendering markdown
 
-Dark / Light mode toggle in the UI
+---
 
-Chat history saved locally using Hive, so messages stay even after app restart
+## Project Structure
 
-Tech used
-
-The app is built using:
-
-Flutter + Dart
-
-flutter_bloc for state managment
-
-Dio for API calls and SSE streaming
-
-Groq API using llama-3.1-8b-instant model
-
-Hive for local storage
-
-flutter_markdown for rendering markdown text
-
-Project Structure
-
-The project follows Clean Architecture.
-Each layer only depends on the layer below it, not the other way around.
-
+Follows Clean Architecture.
+Each layer only depends on the layer below it.
+```
 lib/
-├── core/ # constants, theme, error classes
-├── domain/ # pure dart — entities, repo interfaces, usecases
-├── data/ # api calls, hive, implements domain repos
+├── core/         # constants, theme, error classes
+├── domain/       # pure dart — entities, repo interfaces, usecases
+├── data/         # api calls, hive, implements domain repos
 └── presentation/ # flutter UI + bloc
-Layers explained
-domain
+```
 
-This is the core logic of the app.
-It contains the Message entity, the ChatRepository interface, and use cases like:
+---
 
-SendMessage
+## Layers explained
 
-SaveMessage
+### domain
+Core logic of the app — no Flutter imports, pure Dart.
+Contains the Message entity, ChatRepository interface and use cases:
+- SendMessage
+- SaveMessage  
+- GetChatHistory
+- ClearHistory
 
-GetChatHistory
+### data
+Implements the logic defined in domain.
+- AiRemoteDatasource handles Groq API and streaming chunks
+- ChatRepositoryImpl connects datasource with Hive storage
 
-ClearHistory
+### presentation
+Flutter UI layer with widgets and BLoC.
+ChatBloc listens for events and emits states.
+UI simply reacts to those states.
 
-There are no Flutter imports here, just pure Dart.
+---
 
-data
+## BLoC Events
 
-This layer implements the logic defined in domain.
+| Event | When it happens |
+|---|---|
+| SendMessageEvent | user presses send |
+| ReceiveStreamChunkEvent | new chunk arrives from API |
+| LoadHistoryEvent | app starts, loads Hive data |
+| ClearHistoryEvent | user clears the chat |
 
-AiRemoteDatasource is responsible for calling the Groq API and handling the streaming response chunks.
+## BLoC States
 
-ChatRepositoryImpl connects the remote datasource with Hive local storage.
+| State | Meaning |
+|---|---|
+| ChatInitial | app just opened |
+| ChatLoading | waiting for first chunk, shows dots |
+| ChatStreaming | response coming chunk by chunk |
+| ChatCompleted | response finished, saved to Hive |
+| ChatError | something went wrong |
 
-presentation
+---
 
-This is the Flutter UI layer.
-
-It contains the widgets and the BLoC.
-The ChatBloc listens for events and emits states.
-The UI simply reacts to those states.
-
-BLoC Events
-Event When it happens
-SendMessageEvent when user presses send
-ReceiveStreamChunkEvent whenever a new chunk arrives from API
-LoadHistoryEvent when the app starts and loads Hive data
-ClearHistoryEvent when user clears the chat
-BLoC States
-State Meaning
-Initial app just opened
-Loading waiting for first chunk, shows animated dots
-ChatStreaming response is coming chunk by chunk
-ChatCompleted response finished and saved to Hive
-ChatError something went wrong
-How streaming works
-
-Basically the flow looks like this:
-
+## How streaming works
+```
 User sends message
 ↓
-emit Loading (shows dots animation)
+emit ChatLoading (shows dots animation)
 ↓
 Groq stream connection opens
 ↓
@@ -106,37 +103,54 @@ chunk arrives → ReceiveStreamChunkEvent
 ↓
 emit ChatStreaming (message bubble updates)
 ↓
-more chunks arrive
+more chunks arrive...
 ↓
 stream ends
 ↓
 save message to Hive
 ↓
 emit ChatCompleted
-How to run the project
+```
 
-Clone the repo
+---
 
-Run
+## How to run the project
 
+1. Clone the repo
+2. Run:
+```bash
 flutter pub get
+```
 
-Start the app
+3. Get a free Groq API key from: https://console.groq.com
 
-flutter run
+4. Add key to `.vscode/launch.json`:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "smart_chat",
+      "request": "launch", 
+      "type": "dart",
+      "args": ["--dart-define=GROQ_API_KEY=your_key_here"]
+    }
+  ]
+}
+```
 
-The Groq API key is already added in:
+5. Run the app:
+```bash
+flutter run --dart-define=GROQ_API_KEY=your_key_here
+```
 
-lib/core/constant/app_constant.dart
+---
 
-so it should work directly for testing.
+## Notes
 
-Notes
-
-Groq free tier is quite generous so normal usage should be fine
-
-If you want to change the AI model, just update groqModel in app_constant.dart
-
-Theme toggle currently doesnt persist after restart (could be done using shared_preferences later)
-
-When you press clear chat, the Hive box gets wiped
+- Groq free tier is generous, normal usage should be fine
+- To change AI model update `groqModel` in `app_constants.dart`
+- Theme toggle doesnt persist after restart — could add 
+  shared_preferences later
+- Long press any message bubble to copy text to clipboard
+- Clear chat button wipes the Hive box completely
